@@ -1,0 +1,213 @@
+create table bebida(
+	id_bebida int primary key,
+	nombre varchar(50),
+	cantidad int
+);
+
+create table pizza(
+	id_pizza int primary key,
+	nombre varchar(50),
+	tipo_pizza enum("pequeña", "mediana","grande"),
+	precio int check(precio > 0),
+	cantidad int
+);
+
+create table combo(
+	id_combo int primary key,
+	id_pizza int,
+	id_bebida int,
+	foreign key (id_pizza) references pizza(id_pizza) on delete cascade,
+	foreign key (id_bebida) references bebida(id_bebida) on delete cascade
+);
+
+
+create table ingrediente(
+	id_ingrediente int primary key,
+	nombre varchar(50),
+	precio int check(precio > 0),
+	cantidad int
+);
+create table cliente(
+	id_cliente int primary key,
+	nombre varchar(50),
+	numero_contacto varchar(50),
+	direccion varchar(50)
+);
+
+
+
+create table pedido(
+	id_pedido int primary key,
+	id_cliente int,
+	estado_pagado enum("Pediente", "Pagado") not null,
+	fecha datetime,
+	foreign key (id_cliente) references cliente(id_cliente)
+);
+
+create table ingrediente_pizza(
+	id_ingrediente_pizza int primary key,
+	id_ingrediente int,
+	id_pizza int,
+	foreign key (id_ingrediente) references ingrediente(id_ingrediente) on delete cascade,
+	foreign key (id_pizza) references pizza(id_pizza) on delete cascade
+);
+
+create table detalle_pizza(
+	id_detalle_pedido int primary key,
+	id_ingrediente_pizza int,
+	id_pedido int,
+	foreign key (id_ingrediente_pizza) references ingrediente_pizza(id_ingrediente_pizza) on delete cascade,
+	foreign key (id_pedido)  references pedido(id_pedido) on delete cascade
+);
+
+
+
+-- bebida
+INSERT into bebida values (1,"coca cola",20);
+INSERT into bebida values (2,"pepsi",5);
+INSERT into bebida values (3,"manzana",6);
+INSERT into bebida values (4,"uva",7);
+INSERT into bebida values (5,"naranja",9);
+
+
+-- pizza
+--- "pequeña", "mediana","grande"),
+INSERT into pizza values(1,"peperoni","pequeña", 6000,5);
+INSERT into pizza values(2,"pollo queso", "mediana", 15000,6);
+INSERT into pizza values(3,"mexicana","grande", 25000,7);
+
+
+-- se añade el campo precio al combo
+alter table combo  add precio int check (precio > 0);
+
+
+-- combo 
+INSERT into combo values(1, 1, 1,8000);
+INSERT into combo values(2, 2, 2,20000);
+INSERT into combo values(3, 3, 3, 28000);
+
+
+-- ingredientes
+INSERT into ingrediente  values(1, "pollo", 5000,2);
+INSERT into ingrediente  values(2, "carne", 7000,4);
+INSERT into ingrediente  values(3, "queso", 5000,5);
+
+
+-- ingrediente_pizza
+
+INSERT into ingrediente_pizza  values(1, 1, 1);
+INSERT into ingrediente_pizza  values(2, 1, 2);
+INSERT into ingrediente_pizza  values(3, 2, 2);
+INSERT into ingrediente_pizza  values(4, 3, 3);
+
+
+-- cliente
+
+INSERT into cliente  values(1, "pepe", "303131556", " calle con carrera");
+INSERT into cliente  values(2, "juan", "254789652", " calle con carrera");
+INSERT into cliente  values(3, "tatiana", "147856985", " calle con carrera");
+
+
+
+-- pedido
+INSERT into pedido  values(1, 1, "Pagado","2024-02-01");
+INSERT into pedido  values(2, 2, "Pagado","2025-02-01");
+
+
+-- detalle_pizza
+INSERT into detalle_pizza values(1, 1, 1);
+
+
+
+
+
+
+-- consultas
+-- 1. Registrar un nuevo cliente
+INSERT into cliente  values(4, "Gabriel", "320125489", " calle 43 # 7-5");
+
+
+-- 2. Agregar un nuevo producto (pizza) al menú:
+INSERT into pizza  values(5,"solo carnes", "pequeña", 6000,3);
+
+-- 3. Registrar una bebida en el menú:
+INSERT into bebida values (6,"mandarina",10);
+
+-- 4 Agregar un ingrediente a la base de datos
+INSERT into ingrediente  values(4, "carne desmechada", 5000, 50);
+
+
+-- 5. Crear un pedido para un cliente
+INSERT into pedido  values(3, 4, "Pagado","2024-02-01 21:07");
+
+	
+-- 6. Añadir productos a un pedido específico:
+-- Esta insercion se realiza en la tabla detalle_pizza
+ INSERT into detalle_pizza values(2, 3, 1);
+
+
+-- 8. Consultar el detalle de un pedido (productos y sus ingredientes)
+	
+select  p.nombre as "producto",  i.nombre as ingrediente
+from ingrediente i join ingrediente_pizza ip on i.id_ingrediente = ip.id_ingrediente
+join pizza p on p.id_pizza = ip.id_pizza 
+join detalle_pizza  d on ip.id_ingrediente_pizza = d.id_ingrediente_pizza;
+
+
+
+-- 11 Eliminar un producto del menú (bebida):
+	delete  from bebida  where id_bebida= 1;
+	
+
+
+-- 12 Eliminar un ingrediente de la base de datos:
+	delete  from ingrediente  where id_ingrediente= 1
+	
+
+-- 13 Consultar todos los pedidos de un cliente
+	select c.nombre , p.estado_pagado 
+	from cliente c join pedido p on c.id_cliente = p.id_cliente 
+	where p.estado_pagado = 'Pagado' 
+	
+	
+-- 14. Listar todos los productos disponibles en el menú (pizzas y bebidas)
+
+	select b.nombre
+	from bebida b
+	where b.cantidad > 0
+	UNION 
+	SELECT p.nombre
+	from pizza p
+	where p.cantidad > 0;
+
+
+-- 15. **Listar todos los ingredientes disponibles para personalizar una pizza:**
+
+	SELECT * 
+	from ingrediente i 
+	WHERE cantidad > 0
+	
+	
+-- 17 Listar los clientes que han hecho más de 5 pedidos
+	select c.nombre, COUNT(p.id_cliente)  from cliente c 
+		join pedido p on c.id_cliente=p.id_cliente
+		GROUP by c.nombre
+		HAVING COUNT(p.id_cliente) >= 5;
+
+	
+	
+-- 19 Listar todos los combos de pizzas con bebidas disponibles en el menú:
+	
+	SELECT b.nombre as "bedida", p.nombre as "pizza"
+	FROM bebida b join combo c on b.id_bebida = c.id_bebida 
+		join pizza p on p.id_pizza = c.id_pizza 
+	where b.cantidad > 0 and p.cantidad>0
+	
+	
+-- 20. **Buscar pizzas con un precio mayor a $100:
+		
+	SELECT p.nombre, p.precio
+	from pizza p
+	where p.precio > 100;
+
+
