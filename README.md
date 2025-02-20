@@ -1,4 +1,3 @@
-# mysql
 
 Se crean 8 entidades las cuales son: 
 
